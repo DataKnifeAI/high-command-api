@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    image: harbor.dataknife.net/library/high-command-api:latest
     ports:
       - "5000:5000"
     environment:
