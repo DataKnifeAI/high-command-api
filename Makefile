@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint format clean docker-build docker-run run check check-all commit-changes release venv
+.PHONY: help install dev test lint format clean docker-build docker-login docker-push docker-pull docker-run run check check-all commit-changes release venv
 
 # Force use of bash shell (required for make to work properly with line continuations)
 SHELL := /bin/bash
@@ -83,15 +83,16 @@ docker-login:
 		echo "Error: HARBOR_USERNAME and HARBOR_PASSWORD must be set"; \
 		exit 1; \
 	fi
-	docker login $(HARBOR_REGISTRY) \
+	@echo "$$HARBOR_PASSWORD" | docker login $(HARBOR_REGISTRY) \
 		-u "$$HARBOR_USERNAME" \
-		-p "$$HARBOR_PASSWORD"
+		--password-stdin
 
 docker-build:
 	docker build -t $(APP_NAME):latest .
 	docker tag $(APP_NAME):latest $(HARBOR_IMAGE):$(IMAGE_TAG)
 
-docker-push: docker-build docker-login
+# Ensure we are logged into Harbor before building/tagging and pushing the image.
+docker-push: docker-login docker-build
 	docker push $(HARBOR_IMAGE):$(IMAGE_TAG)
 
 docker-pull:
