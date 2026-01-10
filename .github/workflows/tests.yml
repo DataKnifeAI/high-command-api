@@ -71,6 +71,7 @@ jobs:
       uses: actions/checkout@v5
       with:
         fetch-depth: 0
+<<<<<<< HEAD
     - name: Push to GitLab
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
