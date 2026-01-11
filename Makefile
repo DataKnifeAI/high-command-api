@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint format clean docker-build docker-login docker-push docker-pull docker-run run check check-all commit-changes release venv
+.PHONY: help install dev test lint format clean build docker-build docker-login docker-push docker-pull docker-run run check check-all commit-changes release venv
 
 # Force use of bash shell (required for make to work properly with line continuations)
 SHELL := /bin/bash
@@ -66,6 +66,10 @@ lint:
 format:
 	$(BLACK) src tests
 	$(RUFF) check --fix src tests
+
+build: clean
+	pip install --upgrade pip build
+	python -m build
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

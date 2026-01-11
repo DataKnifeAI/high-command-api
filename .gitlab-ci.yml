@@ -13,9 +13,9 @@ build:
   stage: build
   image: harbor.dataknife.net/dockerhub/library/python:3.14-slim
   script:
-    - apt-get update && apt-get install -y --no-install-recommends git build-essential
+    - apt-get update && apt-get install -y --no-install-recommends make git build-essential
     - pip install --upgrade pip build
-    - python -m build
+    - make build
   artifacts:
     paths:
       - dist/
