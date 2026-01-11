@@ -81,5 +81,4 @@ jobs:
         git remote add gitlab https://gitlab.com/dk-raas/dkai/high-command/high-command-api.git
         git config credential.helper '!f() { echo "username=oauth2"; echo "password=${GITLAB_TOKEN}"; }; f'
         git fetch gitlab main
-        git pull gitlab main --no-edit
-        git push gitlab HEAD:main
+        git push gitlab HEAD:main --force
