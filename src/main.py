@@ -27,7 +27,6 @@ def run_api():
     """Run the API server"""
     import uvicorn
     from src.app_readonly import app
-    from src.config import Config
     
     port = int(os.getenv("PORT", "5000"))
     host = os.getenv("HOST", "0.0.0.0")
