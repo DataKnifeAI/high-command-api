@@ -19,7 +19,7 @@ build:
     paths:
       - dist/
       - build/
-      - *.egg-info/
+      - "*.egg-info/"
     expire_in: 1 hour
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
