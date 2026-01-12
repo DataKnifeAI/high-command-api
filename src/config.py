@@ -11,7 +11,7 @@ class Config:
     TESTING = False
 
     # Database
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///helldivers2.db")
+    DATABASE_URL = os.getenv("DATABASE_URL", "")
 
     # API Settings
     API_TIMEOUT = 30
@@ -44,7 +44,7 @@ class TestingConfig(Config):
     """Testing configuration"""
 
     TESTING = True
-    DATABASE_URL = "sqlite:///:memory:"
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://test:test@localhost:5432/test_db")
     SCRAPE_INTERVAL = 60
 
 

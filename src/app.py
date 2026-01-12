@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from src.config import Config
 from src.database import Database
 from src.scraper import HellDivers2Scraper
 from src.collector import DataCollector
@@ -13,7 +14,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize database and scraper
-db = Database()
+database_url = Config.DATABASE_URL
+if not database_url:
+    raise ValueError("DATABASE_URL environment variable must be set")
+db = Database(database_url)
 scraper = HellDivers2Scraper()
 collector = DataCollector(db, interval=300)
 
