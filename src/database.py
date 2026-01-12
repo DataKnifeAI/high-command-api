@@ -55,6 +55,7 @@ class Database:
 
     def _init_db(self):
         """Initialize database schema (lazy - called on first use)"""
+        conn = None
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
