@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class Database:
     """PostgreSQL database manager for Hell Divers 2 API data"""
 
-    def __init__(self, database_url: str = None):
+    def __init__(self, database_url: Optional[str] = None):
         """
         Initialize database connection
         
