@@ -25,6 +25,8 @@ class TestCampaignExpiration:
         result = temp_db.save_campaign(1, 5, campaign_data)
         assert result is True
 
+        # Mock campaign result
+        mock_cursor.fetchall.return_value = [(campaign_data,)]
         campaigns = temp_db.get_active_campaigns()
         assert len(campaigns) > 0
 
@@ -104,6 +106,8 @@ class TestCampaignExpiration:
         }
         temp_db.save_campaign(1, 5, campaign_data)
 
+        # Mock campaign result
+        mock_cursor.fetchall.return_value = [(campaign_data,)]
         active = temp_db.get_active_campaigns()
         assert len(active) > 0
 
@@ -120,6 +124,8 @@ class TestPlanetEventVariations:
         result = temp_db.save_planet_events(events)
         assert result is True
 
+        # Mock planet events result
+        mock_cursor.fetchall.return_value = [(events[0],)]
         retrieved = temp_db.get_latest_planet_events()
         assert len(retrieved) > 0
 
@@ -230,6 +236,8 @@ class TestGetPlanetStatus:
         planet_data = {"index": 5, "name": "Test Planet", "owner": "Humans"}
         temp_db.save_planet_status(5, planet_data)
 
+        # Mock planet status result
+        mock_cursor.fetchone.return_value = (planet_data,)
         result = temp_db.get_planet_status(5)
         assert result is not None
         assert result["name"] == "Test Planet"
@@ -266,8 +274,13 @@ class TestStatisticsHistory:
     def test_get_statistics_history_format(self, temp_db, mock_psycopg2):
         mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test that statistics history includes both data and timestamp"""
-        temp_db.save_statistics({"total_players": 1000})
+        stats_data = {"total_players": 1000}
+        temp_db.save_statistics(stats_data)
 
+        # Mock statistics history result (data, timestamp)
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc)
+        mock_cursor.fetchall.return_value = [(stats_data, timestamp)]
         result = temp_db.get_statistics_history(limit=1)
         assert len(result) > 0
         assert "data" in result[0]
@@ -284,6 +297,8 @@ class TestAssignmentVariations:
         result = temp_db.save_assignment(1, data)
         assert result is True
 
+        # Mock assignments result
+        mock_cursor.fetchall.return_value = [(data,)]
         retrieved = temp_db.get_latest_assignments(limit=1)
         assert len(retrieved) > 0
 
@@ -293,6 +308,8 @@ class TestAssignmentVariations:
         data = {"id": 1, "title": "Major Order"}
         temp_db.save_assignment(1, data)
 
+        # Mock assignments result
+        mock_cursor.fetchall.return_value = [(data,)]
         result = temp_db.get_assignment(limit=1)
         assert len(result) > 0
 
@@ -303,6 +320,8 @@ class TestAssignmentVariations:
         result = temp_db.save_dispatch(1, data)
         assert result is True
 
+        # Mock dispatches result
+        mock_cursor.fetchall.return_value = [(data,)]
         retrieved = temp_db.get_latest_dispatches(limit=1)
         assert len(retrieved) > 0
 
@@ -313,6 +332,8 @@ class TestAssignmentVariations:
         result = temp_db.save_planet_event(1, 5, "defense", data)
         assert result is True
 
+        # Mock planet events result
+        mock_cursor.fetchall.return_value = [(data,)]
         retrieved = temp_db.get_latest_planet_events(limit=1)
         assert len(retrieved) > 0
 
@@ -358,6 +379,8 @@ class TestSystemStatusVariations:
         result = temp_db.update_system_status("custom_key", "custom_value")
         assert result is True
 
+        # Mock system status result
+        mock_cursor.fetchone.return_value = ("custom_value",)
         retrieved = temp_db.get_system_status("custom_key")
         assert retrieved == "custom_value"
 

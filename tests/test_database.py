@@ -104,8 +104,10 @@ class TestPlanetStatus:
         mock_cursor.execute.assert_called()
         mock_conn.commit.assert_called()
 
-        # Mock history result
-        mock_cursor.fetchall.return_value = [(json.dumps(planet_data),)]
+        # Mock history result (data, timestamp)
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc)
+        mock_cursor.fetchall.return_value = [(planet_data, timestamp)]
         history = temp_db.get_planet_status_history(5, limit=1)
         assert len(history) > 0
 
@@ -116,8 +118,10 @@ class TestPlanetStatus:
         planet_data = {"index": 5, "name": "Test Planet"}
         temp_db.save_planet_status(5, planet_data)
 
-        # Mock history result
-        mock_cursor.fetchall.return_value = [(json.dumps(planet_data),)]
+        # Mock history result (data, timestamp)
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc)
+        mock_cursor.fetchall.return_value = [(planet_data, timestamp)]
         result = temp_db.get_planet_status_history(5)
         assert result is not None
         assert len(result) > 0
@@ -129,10 +133,13 @@ class TestPlanetStatus:
         temp_db.save_planet_status(1, {"index": 1, "name": "Planet 1"})
         temp_db.save_planet_status(2, {"index": 2, "name": "Planet 2"})
 
-        # Mock snapshot result
+        # Mock snapshot result (first fetchone for timestamp, then fetchall for planets)
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc)
+        mock_cursor.fetchone.return_value = (timestamp,)
         mock_cursor.fetchall.return_value = [
-            (json.dumps({"index": 1, "name": "Planet 1"}),),
-            (json.dumps({"index": 2, "name": "Planet 2"}),)
+            ({"index": 1, "name": "Planet 1"},),
+            ({"index": 2, "name": "Planet 2"},)
         ]
         result = temp_db.get_latest_planets_snapshot()
         assert result is not None
@@ -338,10 +345,13 @@ class TestCacheFallback:
         temp_db.save_planet_status(1, {"index": 1, "name": "Planet 1"})
         temp_db.save_planet_status(2, {"index": 2, "name": "Planet 2"})
 
-        # Mock snapshot result
+        # Mock snapshot result (first fetchone for timestamp, then fetchall for planets)
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc)
+        mock_cursor.fetchone.return_value = (timestamp,)
         mock_cursor.fetchall.return_value = [
-            (json.dumps({"index": 1, "name": "Planet 1"}),),
-            (json.dumps({"index": 2, "name": "Planet 2"}),)
+            ({"index": 1, "name": "Planet 1"},),
+            ({"index": 2, "name": "Planet 2"},)
         ]
         result = temp_db.get_latest_planets_snapshot()
         assert result is not None
@@ -369,10 +379,13 @@ class TestCacheFallback:
         temp_db.save_planet_status(1, {"index": 1, "biome": {"name": "Desert"}})
         temp_db.save_planet_status(2, {"index": 2, "biome": {"name": "Ice"}})
 
-        # Mock snapshot result
+        # Mock snapshot result (first fetchone for timestamp, then fetchall for planets)
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc)
+        mock_cursor.fetchone.return_value = (timestamp,)
         mock_cursor.fetchall.return_value = [
-            (json.dumps({"index": 1, "biome": {"name": "Desert"}}),),
-            (json.dumps({"index": 2, "biome": {"name": "Ice"}}),)
+            ({"index": 1, "biome": {"name": "Desert"}},),
+            ({"index": 2, "biome": {"name": "Ice"}},)
         ]
         result = temp_db.get_latest_biomes_snapshot()
         assert result is not None
