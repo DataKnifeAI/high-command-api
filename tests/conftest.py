@@ -2,7 +2,6 @@
 Pytest configuration and shared fixtures for database mocking.
 """
 import pytest
-import json
 from unittest.mock import MagicMock, patch
 from src.database import Database
 
