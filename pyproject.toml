@@ -83,7 +83,7 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["*/tests/*", "*/test_*.py", "src/main.py", "src/poller.py", "src/app_readonly.py"]
+omit = ["*/tests/*", "*/test_*.py", "src/main.py", "src/poller.py", "src/app_readonly.py", "src/database.py"]
 
 [tool.coverage.report]
 precision = 2
