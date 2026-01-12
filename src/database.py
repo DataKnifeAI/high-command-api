@@ -1,10 +1,8 @@
 import json
 import logging
 import psycopg2
-from psycopg2.extras import RealDictCursor
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
-from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 

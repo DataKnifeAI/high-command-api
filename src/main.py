@@ -57,7 +57,7 @@ def run_collector():
         raise ValueError("DATABASE_URL environment variable must be set")
     
     db = Database(database_url)
-    logger.info(f"Database initialized with connection string")
+    logger.info("Database initialized with connection string")
     
     # Initialize collector
     interval = Config.SCRAPE_INTERVAL
