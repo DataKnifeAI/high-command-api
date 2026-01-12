@@ -29,24 +29,16 @@ class TestDatabaseInit:
     """Test database initialization"""
 
     def test_init_creates_file(self):
-        """Test database initialization creates file"""
-        fd, path = tempfile.mkstemp(suffix="postgresql://test:test@localhost:5432/test_db")
-        os.close(fd)
-        os.unlink(path)
-
-        db = Database(database_url='postgresql://test:test@localhost:5432/test_db')
-        assert os.path.exists(path)
+        """Test database initialization with PostgreSQL connection string"""
+        database_url = os.getenv("DATABASE_URL", "postgresql://test:test@localhost:5432/test_db")
+        
+        # For PostgreSQL, we just verify Database can be initialized with a connection string
+        # Note: Actual connection test requires PostgreSQL server running
+        db = Database(database_url=database_url)
+        assert db.database_url == database_url
 
         # Ensure all connections are closed before cleanup
-        # On Windows, files may still be locked even after context manager exits
         del db
-
-        # Retry cleanup with error handling for Windows file locking
-        try:
-            os.unlink(path)
-        except (OSError, PermissionError):
-            # File may be locked on Windows, ignore cleanup errors in tests
-            pass
 
     def test_init_creates_tables(self, temp_db):
         """Test database initialization creates all tables"""
