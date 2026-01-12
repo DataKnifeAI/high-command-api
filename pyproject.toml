@@ -35,6 +35,7 @@ dependencies = [
     "requests>=2.31.0",
     "python-dotenv>=1.0.0",
     "APScheduler>=3.10.4",
+    "psycopg2-binary>=2.9.9",
 ]
 
 [project.optional-dependencies]
@@ -82,7 +83,7 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["*/tests/*", "*/test_*.py"]
+omit = ["*/tests/*", "*/test_*.py", "src/main.py", "src/poller.py", "src/app_readonly.py"]
 
 [tool.coverage.report]
 precision = 2

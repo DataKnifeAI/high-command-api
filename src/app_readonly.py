@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config import Config
 from src.database import Database
 from src.scraper import HellDivers2Scraper
-from src.collector import DataCollector
 
 # Configure logging
 logging.basicConfig(
@@ -13,33 +12,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize database and scraper
+# Initialize database and scraper (for fallback reads only)
 database_url = Config.DATABASE_URL
 if not database_url:
     raise ValueError("DATABASE_URL environment variable must be set")
 db = Database(database_url)
 scraper = HellDivers2Scraper()
-collector = DataCollector(db, interval=300)
 
 
 # Lifespan context manager for startup/shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Starting Hell Divers 2 API")
-    if not collector.is_running:
-        collector.start()
+    logger.info("Starting Hell Divers 2 API (Read-Only Mode)")
     yield
     # Shutdown
     logger.info("Shutting down Hell Divers 2 API")
-    collector.stop()
     scraper.close()
 
 
 # Initialize FastAPI app
 app = FastAPI(
     title="Hell Divers 2 API",
-    description="Real-time scraper for Hell Divers 2 game data",
+    description="Read-only API for Hell Divers 2 game data",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -69,12 +64,11 @@ async def get_war_status():
 
 @app.post("/api/war/status/refresh", tags=["War"])
 async def refresh_war_status():
-    """Manually refresh war status"""
-    data = scraper.get_war_status()
+    """Manually refresh war status (read-only mode - uses cache)"""
+    data = db.get_latest_war_status()
     if data:
-        db.save_war_status(data)
-        return {"success": True, "data": data}
-    raise HTTPException(status_code=500, detail="Failed to fetch war status")
+        return {"success": True, "data": data, "note": "read-only mode - returning cached data"}
+    raise HTTPException(status_code=404, detail="No war status data available")
 
 
 # ========================
@@ -147,12 +141,11 @@ async def get_assignments(
 
 @app.post("/api/assignments/refresh", tags=["Assignments"])
 async def refresh_assignments():
-    """Manually refresh assignments"""
-    data = scraper.get_assignments()
+    """Manually refresh assignments (read-only mode - uses cache)"""
+    data = db.get_latest_assignments(10)
     if data:
-        db.save_assignments(data)
-        return {"success": True, "data": data}
-    raise HTTPException(status_code=500, detail="Failed to fetch assignments")
+        return {"success": True, "data": data, "note": "read-only mode - returning cached data"}
+    raise HTTPException(status_code=404, detail="No assignments available")
 
 
 # ========================
@@ -195,12 +188,11 @@ async def get_dispatches(
 
 @app.post("/api/dispatches/refresh", tags=["Dispatches"])
 async def refresh_dispatches():
-    """Manually refresh dispatches"""
-    data = scraper.get_dispatches()
+    """Manually refresh dispatches (read-only mode - uses cache)"""
+    data = db.get_latest_dispatches(10)
     if data:
-        db.save_dispatches(data)
-        return {"success": True, "data": data}
-    raise HTTPException(status_code=500, detail="Failed to fetch dispatches")
+        return {"success": True, "data": data, "note": "read-only mode - returning cached data"}
+    raise HTTPException(status_code=404, detail="No dispatches available")
 
 
 # ========================
@@ -252,12 +244,11 @@ async def get_planet_events(
 
 @app.post("/api/planet-events/refresh", tags=["Planets"])
 async def refresh_planet_events():
-    """Manually refresh planet events"""
-    data = scraper.get_planet_events()
+    """Manually refresh planet events (read-only mode - uses cache)"""
+    data = db.get_latest_planet_events(10)
     if data:
-        db.save_planet_events(data)
-        return {"success": True, "data": data}
-    raise HTTPException(status_code=500, detail="Failed to fetch planet events")
+        return {"success": True, "data": data, "note": "read-only mode - returning cached data"}
+    raise HTTPException(status_code=404, detail="No planet events available")
 
 
 # ========================
@@ -285,12 +276,12 @@ async def get_planets():
 @app.get("/api/planets/{planet_index}", tags=["Planets"])
 async def get_planet_status(planet_index: int):
     """Get status of a specific planet (with cache fallback)"""
-    # Try live API first
-    data = collector.collect_planet_data(planet_index)
+    # Try cache first (poller updates this)
+    data = db.get_planet_status(planet_index)
 
-    # Fallback to cache if live API fails
+    # Fallback to live API if cache fails
     if data is None:
-        data = db.get_planet_status(planet_index)
+        data = scraper.get_planet_status(planet_index)
 
     if data is not None:
         return data
@@ -335,12 +326,11 @@ async def get_statistics_history(limit: int = Query(100, ge=1, le=1000)):
 
 @app.post("/api/statistics/refresh", tags=["Statistics"])
 async def refresh_statistics():
-    """Manually refresh statistics"""
-    data = scraper.get_statistics()
+    """Manually refresh statistics (read-only mode - uses cache)"""
+    data = db.get_latest_statistics()
     if data:
-        db.save_statistics(data)
-        return {"success": True, "data": data}
-    raise HTTPException(status_code=500, detail="Failed to fetch statistics")
+        return {"success": True, "data": data, "note": "read-only mode - returning cached data"}
+    raise HTTPException(status_code=404, detail="No statistics available")
 
 
 # ========================
@@ -396,11 +386,10 @@ async def get_biomes():
 async def health_check():
     """Health check endpoint"""
     # Returns local service status and upstream API status
-    # No external API calls made here to avoid blocking event loop or consuming rate limits
     upstream_status = db.get_upstream_status()
     return {
         "status": "healthy",
-        "collector_running": collector.is_running,
+        "mode": "read-only",
         "upstream_api": "online" if upstream_status else "offline",
     }
 
@@ -416,7 +405,8 @@ async def root():
     return {
         "name": "Hell Divers 2 API",
         "version": "1.0.0",
-        "description": "Real-time scraper for Hell Divers 2 game data",
+        "mode": "read-only",
+        "description": "Read-only API for Hell Divers 2 game data",
         "docs": "/docs",
         "redoc": "/redoc",
     }

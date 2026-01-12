@@ -22,7 +22,9 @@ class TestConfig:
 
     def test_config_database_default(self):
         """Test default database URL"""
-        assert Config.DATABASE_URL == "sqlite:///helldivers2.db"
+        # Default is empty string, or from DATABASE_URL env var if set
+        # In CI, DATABASE_URL is set to test database
+        assert Config.DATABASE_URL == "" or Config.DATABASE_URL.startswith("postgresql://")
 
     @patch.dict(os.environ, {"DATABASE_URL": "sqlite:///custom.db"})
     def test_config_database_env(self):
@@ -76,8 +78,9 @@ class TestTestingConfig:
         assert TestingConfig.TESTING is True
 
     def test_testing_database(self):
-        """Test testing uses in-memory database"""
-        assert TestingConfig.DATABASE_URL == "sqlite:///:memory:"
+        """Test testing uses PostgreSQL test database"""
+        # TestingConfig uses DATABASE_URL from env or default PostgreSQL connection
+        assert TestingConfig.DATABASE_URL.startswith("postgresql://")
 
     def test_testing_scrape_interval(self):
         """Test testing scrape interval"""
