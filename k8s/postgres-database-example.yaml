@@ -1,0 +1,16 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: highcommand
+  namespace: high-command
+spec:
+  cluster:
+    name: high-command-postgres
+  owner: highcommand
+---
+# This Database resource is optional if the database was created during cluster bootstrap.
+# The cluster bootstrap (in postgres-cluster-example.yaml) already creates the 'highcommand' database.
+# This resource is useful for managing additional databases or if you need to recreate the database.
+#
+# Deployment:
+# kubectl apply -f k8s/postgres-database-example.yaml

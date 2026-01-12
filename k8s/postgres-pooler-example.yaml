@@ -1,0 +1,29 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: high-command-postgres-pooler
+  namespace: high-command
+spec:
+  cluster:
+    name: high-command-postgres
+  instances: 2
+  type: rw
+  pgbouncer:
+    parameters:
+      pool_mode: transaction
+      max_client_conn: "1000"
+      default_pool_size: "25"
+      reserve_pool_size: "5"
+---
+# PgBouncer connection pooler for PostgreSQL cluster.
+# Provides connection pooling to reduce connection overhead.
+#
+# Prerequisites:
+# 1. PostgreSQL cluster must be running (see postgres-cluster-example.yaml)
+#
+# Deployment:
+# kubectl apply -f k8s/postgres-pooler-example.yaml
+#
+# Connection strings:
+# Read-write: postgresql://user:pass@high-command-postgres-rw.high-command.svc.cluster.local:5432/highcommand
+# Pooler: postgresql://user:pass@high-command-postgres-pooler-rw.high-command.svc.cluster.local:5432/highcommand
