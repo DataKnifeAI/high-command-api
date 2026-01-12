@@ -15,9 +15,9 @@ from src.database import Database
 @pytest.fixture
 def temp_db():
     """Create a temporary database for testing"""
-    fd, path = tempfile.mkstemp(suffix=".db")
+    fd, path = tempfile.mkstemp(suffix="postgresql://test:test@localhost:5432/test_db")
     os.close(fd)
-    db = Database(db_path=path)
+    db = Database(database_url='postgresql://test:test@localhost:5432/test_db')
     yield db
     del db
     try:

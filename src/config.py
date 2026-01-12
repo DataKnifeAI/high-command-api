@@ -44,7 +44,7 @@ class TestingConfig(Config):
     """Testing configuration"""
 
     TESTING = True
-    DATABASE_URL = "sqlite:///:memory:"
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://test:test@localhost:5432/test_db")
     SCRAPE_INTERVAL = 60
 
 
