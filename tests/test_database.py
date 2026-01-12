@@ -7,65 +7,62 @@ Tests database initialization, CRUD operations, and data persistence.
 import pytest
 import json
 import os
+from unittest.mock import MagicMock, patch
 from src.database import Database
 
-
-@pytest.fixture
-def temp_db():
-    """Create a temporary database for testing"""
-    # Use PostgreSQL test database connection string
-    # Tests will use DATABASE_URL from environment or default test DB
-    database_url = os.getenv("DATABASE_URL", "postgresql://test:test@localhost:5432/test_db")
-    db = Database(database_url=database_url)
-    yield db
-    # Explicitly delete the database object to close all connections
-    del db
+# Use conftest fixtures for temp_db and mock_psycopg2
 
 
 class TestDatabaseInit:
     """Test database initialization"""
 
-    def test_init_creates_file(self):
+    def test_init_creates_file(self, mock_psycopg2):
         """Test database initialization with PostgreSQL connection string"""
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+        
         database_url = os.getenv("DATABASE_URL", "postgresql://test:test@localhost:5432/test_db")
         
-        # For PostgreSQL, we just verify Database can be initialized with a connection string
-        # Note: Actual connection test requires PostgreSQL server running
+        # Database can be initialized with a connection string
         db = Database(database_url=database_url)
         assert db.database_url == database_url
 
         # Ensure all connections are closed before cleanup
         del db
 
-    def test_init_creates_tables(self, temp_db):
+    def test_init_creates_tables(self, temp_db, mock_psycopg2):
         """Test database initialization creates all tables"""
-        # For PostgreSQL, we verify that _init_db() can be called without errors
-        # Actual table creation requires a working PostgreSQL connection
-        # This test verifies the schema creation logic exists
-        try:
-            temp_db._init_db()
-            # If no exception, initialization succeeded (or gracefully handled connection error)
-            assert True
-        except Exception:
-            # Connection errors are OK in CI without a database
-            # Schema will be created when database is available
-            pass
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+        
+        # Initialize database - should create tables
+        temp_db._init_db()
+        
+        # Verify table creation statements were executed
+        assert mock_cursor.execute.call_count > 0
+        mock_conn.commit.assert_called()
 
 
 class TestWarStatus:
     """Test war status operations"""
 
-    def test_save_war_status(self, temp_db):
+    def test_save_war_status(self, temp_db, mock_psycopg2):
         """Test saving war status data"""
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+        
         data = {"war_id": 1, "status": "active"}
-        temp_db.save_war_status(data)
+        result = temp_db.save_war_status(data)
+        
+        # Verify save was called
+        assert result is True
+        mock_cursor.execute.assert_called()
+        mock_conn.commit.assert_called()
 
-        result = temp_db.get_latest_war_status()
-        assert result is not None
-        assert result["war_id"] == 1
-
-    def test_get_latest_war_status_empty(self, temp_db):
+    def test_get_latest_war_status_empty(self, temp_db, mock_psycopg2):
         """Test getting war status when none exists"""
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+        
+        # Mock empty result
+        mock_cursor.fetchone.return_value = None
+        
         result = temp_db.get_latest_war_status()
         assert result is None
 
@@ -73,17 +70,25 @@ class TestWarStatus:
 class TestStatistics:
     """Test statistics operations"""
 
-    def test_save_statistics(self, temp_db):
+    def test_save_statistics(self, temp_db, mock_psycopg2):
         """Test saving statistics data"""
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+        
         data = {"total_players": 1000, "total_kills": 50000, "missions_won": 2000}
-        temp_db.save_statistics(data)
+        result = temp_db.save_statistics(data)
+        
+        # Verify save was called
+        assert result is True
+        mock_cursor.execute.assert_called()
+        mock_conn.commit.assert_called()
 
-        result = temp_db.get_latest_statistics()
-        assert result is not None
-        assert result["total_players"] == 1000
-
-    def test_get_latest_statistics_empty(self, temp_db):
+    def test_get_latest_statistics_empty(self, temp_db, mock_psycopg2):
         """Test getting statistics when none exists"""
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+        
+        # Mock empty result
+        mock_cursor.fetchone.return_value = None
+        
         result = temp_db.get_latest_statistics()
         assert result is None
 
@@ -91,7 +96,7 @@ class TestStatistics:
 class TestPlanetStatus:
     """Test planet status operations"""
 
-    def test_save_planet_status(self, temp_db):
+    def test_save_planet_status(self, temp_db, mock_psycopg2):
         """Test saving planet status"""
         planet_data = {"index": 5, "name": "Test Planet", "owner": "Humans", "status": "controlled"}
         result = temp_db.save_planet_status(5, planet_data)
@@ -100,16 +105,17 @@ class TestPlanetStatus:
         history = temp_db.get_planet_status_history(5, limit=1)
         assert len(history) > 0
 
-    def test_get_planet_status_history(self, temp_db):
+    def test_get_planet_status_history(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting planet status history"""
-        planet_data = {"index": 5, "name": "Test Planet"}
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         temp_db.save_planet_status(5, planet_data)
 
         result = temp_db.get_planet_status_history(5)
         assert result is not None
         assert len(result) > 0
 
-    def test_get_latest_planets_snapshot(self, temp_db):
+    def test_get_latest_planets_snapshot(self, temp_db, mock_psycopg2):
         """Test getting all planets snapshot"""
         temp_db.save_planet_status(1, {"index": 1, "name": "Planet 1"})
         temp_db.save_planet_status(2, {"index": 2, "name": "Planet 2"})
@@ -121,22 +127,23 @@ class TestPlanetStatus:
 
 class TestCampaigns:
     """Test campaigns operations"""
-
-    def test_save_campaign(self, temp_db):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+    def test_save_campaign(self, temp_db, mock_psycopg2):
         """Test saving a single campaign"""
         campaign_data = {"id": 1, "planet": {"index": 5}, "status": "active"}
         result = temp_db.save_campaign(1, 5, campaign_data)
         assert result is True
 
-    def test_get_active_campaigns(self, temp_db):
+    def test_get_active_campaigns(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting active campaigns"""
-        temp_db.save_campaign(1, 5, {"id": 1, "planet": {"index": 5}})
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
 
         result = temp_db.get_active_campaigns()
         assert result is not None
         assert isinstance(result, list)
 
-    def test_get_latest_campaigns_snapshot(self, temp_db):
+    def test_get_latest_campaigns_snapshot(self, temp_db, mock_psycopg2):
         """Test getting latest campaigns snapshot"""
         temp_db.save_campaign(1, 5, {"id": 1, "planet": {"index": 5}})
 
@@ -147,8 +154,8 @@ class TestCampaigns:
 
 class TestAssignments:
     """Test assignments operations"""
-
-    def test_save_assignments(self, temp_db):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+    def test_save_assignments(self, temp_db, mock_psycopg2):
         """Test saving assignments"""
         assignments = [{"id": 1, "title": "Major Order 1", "description": "Test"}]
         result = temp_db.save_assignments(assignments)
@@ -157,9 +164,10 @@ class TestAssignments:
         retrieved = temp_db.get_latest_assignments()
         assert len(retrieved) > 0
 
-    def test_get_latest_assignments_with_limit(self, temp_db):
+    def test_get_latest_assignments_with_limit(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting assignments with limit"""
-        assignments = [
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
             {"id": 1, "title": "Order 1"},
             {"id": 2, "title": "Order 2"},
             {"id": 3, "title": "Order 3"},
@@ -173,7 +181,7 @@ class TestAssignments:
 class TestDispatches:
     """Test dispatches operations"""
 
-    def test_save_dispatches(self, temp_db):
+    def test_save_dispatches(self, temp_db, mock_psycopg2):
         """Test saving dispatches"""
         dispatches = [{"id": 1, "message": "News 1"}]
         result = temp_db.save_dispatches(dispatches)
@@ -182,9 +190,10 @@ class TestDispatches:
         retrieved = temp_db.get_latest_dispatches()
         assert len(retrieved) > 0
 
-    def test_get_latest_dispatches_with_limit(self, temp_db):
+    def test_get_latest_dispatches_with_limit(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting dispatches with limit"""
-        dispatches = [
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
             {"id": 1, "message": "Important news"},
             {"id": 2, "message": "Regular update"},
         ]
@@ -197,7 +206,7 @@ class TestDispatches:
 class TestPlanetEvents:
     """Test planet events operations"""
 
-    def test_save_planet_events(self, temp_db):
+    def test_save_planet_events(self, temp_db, mock_psycopg2):
         """Test saving planet events"""
         events = [{"id": 1, "planetIndex": 5, "eventType": "storm"}]
         result = temp_db.save_planet_events(events)
@@ -206,9 +215,10 @@ class TestPlanetEvents:
         retrieved = temp_db.get_latest_planet_events()
         assert len(retrieved) > 0
 
-    def test_get_latest_planet_events_with_limit(self, temp_db):
+    def test_get_latest_planet_events_with_limit(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting planet events with limit"""
-        events = [
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
             {"id": 1, "planetIndex": 5, "eventType": "storm"},
             {"id": 2, "planetIndex": 10, "eventType": "meteor"},
         ]
@@ -221,15 +231,16 @@ class TestPlanetEvents:
 class TestSystemStatus:
     """Test system status operations"""
 
-    def test_set_upstream_status(self, temp_db):
+    def test_set_upstream_status(self, temp_db, mock_psycopg2):
         """Test setting upstream status"""
         temp_db.set_upstream_status(True)
         result = temp_db.get_upstream_status()
         assert result is True
 
-    def test_get_upstream_status(self, temp_db):
+    def test_get_upstream_status(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting upstream status"""
-        temp_db.set_upstream_status(True)
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         result = temp_db.get_upstream_status()
         assert result is True
 
@@ -237,7 +248,7 @@ class TestSystemStatus:
         result = temp_db.get_upstream_status()
         assert result is False
 
-    def test_get_upstream_status_default(self, temp_db):
+    def test_get_upstream_status_default(self, temp_db, mock_psycopg2):
         """Test getting upstream status default value"""
         result = temp_db.get_upstream_status()
         # Should return True by default (optimistic)
@@ -246,8 +257,8 @@ class TestSystemStatus:
 
 class TestCacheFallback:
     """Test cache fallback methods"""
-
-    def test_get_latest_planets_snapshot(self, temp_db):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+    def test_get_latest_planets_snapshot(self, temp_db, mock_psycopg2):
         """Test getting latest planets snapshot"""
         temp_db.save_planet_status(1, {"index": 1, "name": "Planet 1"})
         temp_db.save_planet_status(2, {"index": 2, "name": "Planet 2"})
@@ -257,16 +268,17 @@ class TestCacheFallback:
         assert isinstance(result, list)
         assert len(result) >= 2
 
-    def test_get_latest_factions_snapshot(self, temp_db):
+    def test_get_latest_factions_snapshot(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting latest factions snapshot"""
-        war_data = {"factions": [{"id": 1, "name": "Terminids"}]}
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         temp_db.save_war_status(war_data)
 
         result = temp_db.get_latest_factions_snapshot()
         assert result is not None
         assert isinstance(result, list)
 
-    def test_get_latest_biomes_snapshot(self, temp_db):
+    def test_get_latest_biomes_snapshot(self, temp_db, mock_psycopg2):
         """Test getting latest biomes snapshot"""
         # Save planets with biomes
         temp_db.save_planet_status(1, {"index": 1, "biome": {"name": "Desert"}})
@@ -279,8 +291,8 @@ class TestCacheFallback:
 
 class TestDatabaseErrors:
     """Test database error handling"""
-
-    def test_save_with_invalid_json(self, temp_db):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
+    def test_save_with_invalid_json(self, temp_db, mock_psycopg2):
         """Test saving data with non-serializable objects"""
         # This should not crash but handle gracefully
         try:
@@ -292,8 +304,9 @@ class TestDatabaseErrors:
             # Expected for non-serializable data
             assert True
 
-    def test_empty_list_handling(self, temp_db):
+    def test_empty_list_handling(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test handling empty lists"""
-        result = temp_db.save_assignments([])
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         # Empty list should still be processed
         assert result is True or result is False

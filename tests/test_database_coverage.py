@@ -25,7 +25,8 @@ def temp_db():
 class TestCampaignExpiration:
     """Test campaign expiration logic"""
 
-    def test_save_campaign_with_future_expiration(self, temp_db):
+    def test_save_campaign_with_future_expiration(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving campaign with future expiration date"""
         future_date = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
         campaign_data = {
@@ -39,7 +40,8 @@ class TestCampaignExpiration:
         campaigns = temp_db.get_active_campaigns()
         assert len(campaigns) > 0
 
-    def test_save_campaign_with_past_expiration(self, temp_db):
+    def test_save_campaign_with_past_expiration(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving campaign with past expiration date"""
         past_date = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
         campaign_data = {
@@ -57,7 +59,8 @@ class TestCampaignExpiration:
         # The expired campaign should not be in active campaigns
         assert isinstance(campaigns, list)
 
-    def test_save_campaign_no_expiration(self, temp_db):
+    def test_save_campaign_no_expiration(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving campaign without expiration"""
         campaign_data = {
             "id": 1,
@@ -66,7 +69,8 @@ class TestCampaignExpiration:
         result = temp_db.save_campaign(1, 5, campaign_data)
         assert result is True
 
-    def test_save_campaign_invalid_expiration_format(self, temp_db):
+    def test_save_campaign_invalid_expiration_format(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving campaign with invalid expiration format"""
         campaign_data = {
             "id": 1,
@@ -77,7 +81,8 @@ class TestCampaignExpiration:
         # Should default to active despite invalid format
         assert result is True
 
-    def test_get_active_campaigns_filters_expired(self, temp_db):
+    def test_get_active_campaigns_filters_expired(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test that get_active_campaigns filters out expired campaigns"""
         # Add a future campaign
         future_date = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
@@ -102,7 +107,8 @@ class TestCampaignExpiration:
         # Active campaigns are filtered at retrieval time
         assert isinstance(active, list)
 
-    def test_get_active_campaigns_no_expiration_included(self, temp_db):
+    def test_get_active_campaigns_no_expiration_included(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test that campaigns without expiration are included"""
         campaign_data = {
             "id": 1,
@@ -117,7 +123,8 @@ class TestCampaignExpiration:
 class TestPlanetEventVariations:
     """Test planet event variations in format"""
 
-    def test_save_planet_events_snake_case(self, temp_db):
+    def test_save_planet_events_snake_case(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving planet events with snake_case keys"""
         events = [
             {"id": 1, "planet_index": 5, "event_type": "defense"}
@@ -128,7 +135,8 @@ class TestPlanetEventVariations:
         retrieved = temp_db.get_latest_planet_events()
         assert len(retrieved) > 0
 
-    def test_save_planet_events_camel_case(self, temp_db):
+    def test_save_planet_events_camel_case(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving planet events with camelCase keys"""
         events = [
             {"id": 2, "planetIndex": 6, "eventType": "offensive"}
@@ -136,7 +144,8 @@ class TestPlanetEventVariations:
         result = temp_db.save_planet_events(events)
         assert result is True
 
-    def test_save_planet_events_missing_planet_index(self, temp_db):
+    def test_save_planet_events_missing_planet_index(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving planet events without planet_index"""
         events = [
             {"id": 3, "eventType": "event"}  # Missing planet_index
@@ -145,7 +154,8 @@ class TestPlanetEventVariations:
         # Should not crash even with missing planet_index
         assert result is True
 
-    def test_save_planet_events_missing_event_id(self, temp_db):
+    def test_save_planet_events_missing_event_id(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving planet events without event_id"""
         events = [
             {"planetIndex": 5, "eventType": "event"}  # Missing id
@@ -154,7 +164,8 @@ class TestPlanetEventVariations:
         # Should handle gracefully
         assert isinstance(result, bool)
 
-    def test_save_planet_events_default_event_type(self, temp_db):
+    def test_save_planet_events_default_event_type(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test saving planet events defaults to 'unknown' for missing eventType"""
         events = [
             {"id": 4, "planetIndex": 7}  # Missing eventType
@@ -162,7 +173,8 @@ class TestPlanetEventVariations:
         result = temp_db.save_planet_events(events)
         assert result is True
 
-    def test_get_planet_events_by_planet_index(self, temp_db):
+    def test_get_planet_events_by_planet_index(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting planet events filtered by planet_index"""
         events = [
             {"id": 1, "planetIndex": 5, "eventType": "defense"},
@@ -179,7 +191,8 @@ class TestPlanetEventVariations:
 class TestBiomeSnapshotEdgeCases:
     """Test biome snapshot with various biome formats"""
 
-    def test_get_latest_biomes_snapshot_no_biomes(self, temp_db):
+    def test_get_latest_biomes_snapshot_no_biomes(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting biomes snapshot when planets have no biome data"""
         temp_db.save_planet_status(1, {"index": 1, "name": "Planet 1"})
         temp_db.save_planet_status(2, {"index": 2, "name": "Planet 2"})
@@ -188,7 +201,8 @@ class TestBiomeSnapshotEdgeCases:
         # Should return None or empty list when no biomes
         assert result is None or result == []
 
-    def test_get_latest_biomes_snapshot_biome_not_dict(self, temp_db):
+    def test_get_latest_biomes_snapshot_biome_not_dict(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting biomes when biome is not a dict"""
         temp_db.save_planet_status(1, {
             "index": 1,
@@ -199,7 +213,8 @@ class TestBiomeSnapshotEdgeCases:
         # Should handle non-dict biomes gracefully
         assert result is None or isinstance(result, list)
 
-    def test_get_latest_biomes_snapshot_duplicate_biomes(self, temp_db):
+    def test_get_latest_biomes_snapshot_duplicate_biomes(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test that duplicate biome names are not repeated"""
         temp_db.save_planet_status(1, {
             "index": 1,
@@ -221,7 +236,8 @@ class TestBiomeSnapshotEdgeCases:
 class TestGetPlanetStatus:
     """Test getting planet status"""
 
-    def test_get_planet_status(self, temp_db):
+    def test_get_planet_status(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test retrieving planet status by index"""
         planet_data = {"index": 5, "name": "Test Planet", "owner": "Humans"}
         temp_db.save_planet_status(5, planet_data)
@@ -230,7 +246,8 @@ class TestGetPlanetStatus:
         assert result is not None
         assert result["name"] == "Test Planet"
 
-    def test_get_planet_status_not_found(self, temp_db):
+    def test_get_planet_status_not_found(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting non-existent planet status"""
         result = temp_db.get_planet_status(999)
         assert result is None
@@ -239,7 +256,8 @@ class TestGetPlanetStatus:
 class TestStatisticsHistory:
     """Test statistics history retrieval"""
 
-    def test_get_statistics_history_with_limit(self, temp_db):
+    def test_get_statistics_history_with_limit(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting statistics history with limit"""
         for i in range(5):
             temp_db.save_statistics({
@@ -251,12 +269,14 @@ class TestStatisticsHistory:
         assert isinstance(result, list)
         assert len(result) <= 3
 
-    def test_get_statistics_history_empty(self, temp_db):
+    def test_get_statistics_history_empty(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting statistics history when none exists"""
         result = temp_db.get_statistics_history()
         assert result == []
 
-    def test_get_statistics_history_format(self, temp_db):
+    def test_get_statistics_history_format(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test that statistics history includes both data and timestamp"""
         temp_db.save_statistics({"total_players": 1000})
 
@@ -269,7 +289,8 @@ class TestStatisticsHistory:
 class TestAssignmentVariations:
     """Test assignment variations"""
 
-    def test_save_single_assignment(self, temp_db):
+    def test_save_single_assignment(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test save_assignment method"""
         data = {"id": 1, "title": "Major Order"}
         result = temp_db.save_assignment(1, data)
@@ -278,7 +299,8 @@ class TestAssignmentVariations:
         retrieved = temp_db.get_latest_assignments(limit=1)
         assert len(retrieved) > 0
 
-    def test_get_assignment_alias(self, temp_db):
+    def test_get_assignment_alias(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test get_assignment method (alias for get_latest_assignments)"""
         data = {"id": 1, "title": "Major Order"}
         temp_db.save_assignment(1, data)
@@ -286,7 +308,8 @@ class TestAssignmentVariations:
         result = temp_db.get_assignment(limit=1)
         assert len(result) > 0
 
-    def test_save_single_dispatch(self, temp_db):
+    def test_save_single_dispatch(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test save_dispatch method"""
         data = {"id": 1, "message": "News"}
         result = temp_db.save_dispatch(1, data)
@@ -295,7 +318,8 @@ class TestAssignmentVariations:
         retrieved = temp_db.get_latest_dispatches(limit=1)
         assert len(retrieved) > 0
 
-    def test_save_single_planet_event(self, temp_db):
+    def test_save_single_planet_event(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test save_planet_event method"""
         data = {"id": 1, "type": "storm"}
         result = temp_db.save_planet_event(1, 5, "defense", data)
@@ -308,22 +332,26 @@ class TestAssignmentVariations:
 class TestEmptyResultHandling:
     """Test handling of empty results"""
 
-    def test_get_latest_planets_snapshot_no_planets(self, temp_db):
+    def test_get_latest_planets_snapshot_no_planets(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test planets snapshot when none exist"""
         result = temp_db.get_latest_planets_snapshot()
         assert result is None
 
-    def test_get_latest_campaigns_snapshot_no_campaigns(self, temp_db):
+    def test_get_latest_campaigns_snapshot_no_campaigns(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test campaigns snapshot when none exist"""
         result = temp_db.get_latest_campaigns_snapshot()
         assert result is None
 
-    def test_get_latest_factions_snapshot_no_war_data(self, temp_db):
+    def test_get_latest_factions_snapshot_no_war_data(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test factions snapshot when no war data exists"""
         result = temp_db.get_latest_factions_snapshot()
         assert result is None
 
-    def test_get_latest_factions_snapshot_no_factions_in_war(self, temp_db):
+    def test_get_latest_factions_snapshot_no_factions_in_war(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test factions snapshot when war data has no factions"""
         war_data = {"status": "active"}  # No factions
         temp_db.save_war_status(war_data)
@@ -336,7 +364,8 @@ class TestEmptyResultHandling:
 class TestSystemStatusVariations:
     """Test system status operations variations"""
 
-    def test_update_system_status_custom_key(self, temp_db):
+    def test_update_system_status_custom_key(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test updating custom system status"""
         result = temp_db.update_system_status("custom_key", "custom_value")
         assert result is True
@@ -344,12 +373,14 @@ class TestSystemStatusVariations:
         retrieved = temp_db.get_system_status("custom_key")
         assert retrieved == "custom_value"
 
-    def test_get_system_status_nonexistent(self, temp_db):
+    def test_get_system_status_nonexistent(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test getting non-existent system status"""
         result = temp_db.get_system_status("nonexistent_key")
         assert result is None
 
-    def test_upstream_status_not_set_defaults_to_false(self, temp_db):
+    def test_upstream_status_not_set_defaults_to_false(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test that upstream status defaults to false when not set"""
         result = temp_db.get_upstream_status()
         # Initial state should be false (conservative default)
@@ -359,7 +390,8 @@ class TestSystemStatusVariations:
 class TestErrorHandlingInMethods:
     """Test error handling in database methods"""
 
-    def test_get_planet_status_history_error_handling(self, temp_db):
+    def test_get_planet_status_history_error_handling(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test planet status history handles errors gracefully"""
         # Save valid data first
         temp_db.save_planet_status(5, {"index": 5, "name": "Planet"})
@@ -367,7 +399,8 @@ class TestErrorHandlingInMethods:
         result = temp_db.get_planet_status_history(5, limit=10)
         assert isinstance(result, list)
 
-    def test_get_planet_events_error_handling(self, temp_db):
+    def test_get_planet_events_error_handling(self, temp_db, mock_psycopg2):
+        mock_pg, mock_conn, mock_cursor = mock_psycopg2
         """Test planet events handles errors gracefully"""
         # Save valid data
         events = [{"id": 1, "planetIndex": 5, "eventType": "defense"}]
