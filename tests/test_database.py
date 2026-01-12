@@ -5,9 +5,7 @@ Tests database initialization, CRUD operations, and data persistence.
 """
 
 import pytest
-import sqlite3
 import json
-import tempfile
 import os
 from src.database import Database
 
@@ -17,9 +15,8 @@ def temp_db():
     """Create a temporary database for testing"""
     # Use PostgreSQL test database connection string
     # Tests will use DATABASE_URL from environment or default test DB
-    import os
     database_url = os.getenv("DATABASE_URL", "postgresql://test:test@localhost:5432/test_db")
-    db = Database(database_url='postgresql://test:test@localhost:5432/test_db')
+    db = Database(database_url=database_url)
     yield db
     # Explicitly delete the database object to close all connections
     del db
