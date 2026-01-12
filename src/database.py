@@ -87,7 +87,7 @@ class Database:
                 """
                 CREATE TABLE IF NOT EXISTS planet_status (
                     id SERIAL PRIMARY KEY,
-                    planet_index INTEGER NOT NULL,
+                    planet_index INTEGER UNIQUE NOT NULL,
                     data JSONB NOT NULL,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -99,7 +99,7 @@ class Database:
                 """
                 CREATE TABLE IF NOT EXISTS campaigns (
                     id SERIAL PRIMARY KEY,
-                    campaign_id INTEGER UNIQUE NOT NULL,
+                    campaign_id BIGINT UNIQUE NOT NULL,
                     planet_index INTEGER,
                     status TEXT,
                     data JSONB NOT NULL,
@@ -113,7 +113,7 @@ class Database:
                 """
                 CREATE TABLE IF NOT EXISTS assignments (
                     id SERIAL PRIMARY KEY,
-                    assignment_id INTEGER UNIQUE NOT NULL,
+                    assignment_id BIGINT UNIQUE NOT NULL,
                     data JSONB NOT NULL,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -125,7 +125,7 @@ class Database:
                 """
                 CREATE TABLE IF NOT EXISTS dispatches (
                     id SERIAL PRIMARY KEY,
-                    dispatch_id INTEGER UNIQUE NOT NULL,
+                    dispatch_id BIGINT UNIQUE NOT NULL,
                     data JSONB NOT NULL,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -137,7 +137,7 @@ class Database:
                 """
                 CREATE TABLE IF NOT EXISTS planet_events (
                     id SERIAL PRIMARY KEY,
-                    event_id INTEGER UNIQUE NOT NULL,
+                    event_id BIGINT UNIQUE NOT NULL,
                     planet_index INTEGER,
                     event_type TEXT,
                     data JSONB NOT NULL,
