@@ -11,7 +11,7 @@ class Config:
     TESTING = False
 
     # Database
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///helldivers2.db")
+    DATABASE_URL = os.getenv("DATABASE_URL", "")
 
     # API Settings
     API_TIMEOUT = 30

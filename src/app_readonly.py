@@ -12,7 +12,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize database and scraper (for fallback reads only)
-db = Database()
+from src.config import Config
+database_url = Config.DATABASE_URL
+if not database_url:
+    raise ValueError("DATABASE_URL environment variable must be set")
+db = Database(database_url)
 scraper = HellDivers2Scraper()
 
 

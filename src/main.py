@@ -52,15 +52,12 @@ def run_collector():
     logger.info("Starting High Command API Collector")
     
     # Initialize database
-    db_path = Config.DATABASE_URL.replace("sqlite:///", "")
-    if db_path.startswith("/"):
-        db_path = db_path
-    else:
-        # Default to data directory in container
-        db_path = f"/data/{db_path}"
+    database_url = Config.DATABASE_URL
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable must be set")
     
-    db = Database(db_path)
-    logger.info(f"Database initialized at: {db_path}")
+    db = Database(database_url)
+    logger.info(f"Database initialized with connection string")
     
     # Initialize collector
     interval = Config.SCRAPE_INTERVAL
