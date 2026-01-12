@@ -4,10 +4,7 @@ Additional database tests to improve coverage for edge cases and error paths.
 Targets uncovered lines in database.py methods.
 """
 
-import pytest
-import os
 from datetime import datetime, timedelta, timezone
-from src.database import Database
 
 
 # Use conftest fixtures for temp_db and mock_psycopg2

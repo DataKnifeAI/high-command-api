@@ -4,10 +4,8 @@ Unit tests for database module.
 Tests database initialization, CRUD operations, and data persistence.
 """
 
-import pytest
 import json
 import os
-from unittest.mock import MagicMock, patch
 from src.database import Database
 
 # Use conftest fixtures for temp_db and mock_psycopg2
