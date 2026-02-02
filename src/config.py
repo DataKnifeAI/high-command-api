@@ -25,6 +25,9 @@ class Config:
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+    # Claude API (optional - for UI Claude integration via backend proxy)
+    CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY", "")
+
 
 class DevelopmentConfig(Config):
     """Development configuration"""

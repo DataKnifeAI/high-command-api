@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config import Config
 from src.database import Database
 from src.scraper import HellDivers2Scraper
+from src.claude_proxy import router as claude_router
 
 # Configure logging
 logging.basicConfig(
@@ -38,6 +39,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Claude proxy (when CLAUDE_API_KEY is set)
+app.include_router(claude_router)
 
 # Add CORS middleware
 app.add_middleware(
@@ -380,6 +384,14 @@ async def get_biomes():
 # ========================
 # Health Check
 # ========================
+
+
+@app.get("/api/config", tags=["Config"])
+async def get_config():
+    """Public config for UI (e.g. whether Claude is available via backend)."""
+    return {
+        "claudeEnabled": bool(Config.CLAUDE_API_KEY),
+    }
 
 
 @app.get("/api/health", tags=["Health"])

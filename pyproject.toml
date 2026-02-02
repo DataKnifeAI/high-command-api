@@ -33,6 +33,7 @@ dependencies = [
     "fastapi>=0.104.1",
     "uvicorn>=0.24.0",
     "requests>=2.31.0",
+    "httpx>=0.24.0",
     "python-dotenv>=1.0.0",
     "APScheduler>=3.10.4",
     "psycopg2-binary>=2.9.9",

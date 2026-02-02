@@ -48,7 +48,7 @@ class TestWarStatus:
         
         data = {"war_id": 1, "status": "active"}
         result = temp_db.save_war_status(data)
-        
+
         # Verify save was called
         assert result is True
         mock_cursor.execute.assert_called()
@@ -74,7 +74,7 @@ class TestStatistics:
         
         data = {"total_players": 1000, "total_kills": 50000, "missions_won": 2000}
         result = temp_db.save_statistics(data)
-        
+
         # Verify save was called
         assert result is True
         mock_cursor.execute.assert_called()
