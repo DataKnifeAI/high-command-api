@@ -55,16 +55,26 @@ class Database:
     def _get_connection(self):
         """Get a database connection from the pool (returns to pool on close)."""
         conn = self._get_pool().getconn()
-        # Wrap so conn.close() returns to pool instead of closing the underlying connection
-        def _close():
-            try:
-                conn.rollback()  # Reset connection state for reuse
-            except Exception:
-                pass
-            self._get_pool().putconn(conn)
+        # Use wrapper since conn.close is read-only in psycopg2
+        return _PooledConnection(conn, self._get_pool())
 
-        conn.close = _close
-        return conn
+
+class _PooledConnection:
+    """Wrapper that returns connection to pool on close() instead of closing it."""
+
+    def __init__(self, conn, pool_instance):
+        self._conn = conn
+        self._pool = pool_instance
+
+    def close(self):
+        try:
+            self._conn.rollback()
+        except Exception:
+            pass
+        self._pool.putconn(self._conn)
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
 
     def close_pool(self):
         """Close the connection pool. Call on application shutdown."""
