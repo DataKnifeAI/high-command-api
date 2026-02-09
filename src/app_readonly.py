@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down Hell Divers 2 API")
     scraper.close()
+    db.close_pool()
 
 
 # Initialize FastAPI app
@@ -394,9 +395,17 @@ async def get_config():
     }
 
 
+@app.get("/api/livez", tags=["Health"])
+async def liveness_probe():
+    """Lightweight liveness probe - no DB, for Kubernetes liveness checks.
+    Returns 200 if the process is alive. Use /api/health for readiness (includes DB check).
+    """
+    return {"status": "ok"}
+
+
 @app.get("/api/health", tags=["Health"])
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint - includes DB and upstream status (for readiness)."""
     # Returns local service status and upstream API status
     upstream_status = db.get_upstream_status()
     return {
