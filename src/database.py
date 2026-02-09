@@ -1,19 +1,24 @@
 import json
 import logging
 import psycopg2
+from psycopg2 import pool
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# Connection pool defaults
+DEFAULT_POOL_MIN_CONN = 2
+DEFAULT_POOL_MAX_CONN = 10
+
 
 class Database:
-    """PostgreSQL database manager for Hell Divers 2 API data"""
+    """PostgreSQL database manager for Hell Divers 2 API data with connection pooling"""
 
     def __init__(self, database_url: Optional[str] = None):
         """
-        Initialize database connection
-        
+        Initialize database connection pool
+
         Args:
             database_url: PostgreSQL connection string (postgresql://user:pass@host:port/db)
                          If None, will try to get from DATABASE_URL env var
@@ -21,17 +26,41 @@ class Database:
         if database_url is None:
             import os
             database_url = os.getenv("DATABASE_URL", "")
-        
+
         if not database_url:
             raise ValueError("DATABASE_URL must be provided")
-        
+
         self.database_url = database_url
         self._initialized = False
-        # Lazy initialization - only connect when first needed
+        self._pool: Optional[pool.ThreadedConnectionPool] = None
+
+    def _get_pool(self) -> pool.ThreadedConnectionPool:
+        """Get or create the connection pool (lazy init)"""
+        if self._pool is None:
+            self._pool = pool.ThreadedConnectionPool(
+                minconn=DEFAULT_POOL_MIN_CONN,
+                maxconn=DEFAULT_POOL_MAX_CONN,
+                dsn=self.database_url,
+            )
+            logger.info("Database connection pool initialized")
+        return self._pool
 
     def _get_connection(self):
-        """Get a database connection"""
-        return psycopg2.connect(self.database_url)
+        """Get a database connection from the pool (returns to pool on close)."""
+        conn = self._get_pool().getconn()
+        # Wrap so conn.close() returns to pool instead of closing the underlying connection
+        def _close():
+            self._get_pool().putconn(conn)
+
+        conn.close = _close
+        return conn
+
+    def close_pool(self):
+        """Close the connection pool. Call on application shutdown."""
+        if self._pool is not None:
+            self._pool.closeall()
+            self._pool = None
+            logger.info("Database connection pool closed")
 
     @staticmethod
     def _parse_expiration_time(expiration_time: str) -> Optional[datetime]:

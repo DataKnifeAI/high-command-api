@@ -46,39 +46,39 @@ def run_collector():
     from src.database import Database
     from src.collector import DataCollector
     from src.config import Config
-    
+
     global _collector
-    
+
     logger.info("Starting High Command API Collector")
-    
+
     # Initialize database
     database_url = Config.DATABASE_URL
     if not database_url:
         raise ValueError("DATABASE_URL environment variable must be set")
-    
+
     db = Database(database_url)
     logger.info("Database initialized with connection string")
-    
+
     # Initialize collector
     interval = Config.SCRAPE_INTERVAL
     _collector = DataCollector(db, interval=interval)
-    
+
     def signal_handler(sig, frame):
         """Handle shutdown signals"""
         logger.info("Received shutdown signal, stopping collector...")
         if _collector:
             _collector.stop()
         sys.exit(0)
-    
+
     # Register signal handlers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
+
     # Start collector
     try:
         _collector.start()
         logger.info(f"Collector started with {interval}s interval")
-        
+
         # Keep running
         while _collector.is_running:
             time.sleep(1)
@@ -89,6 +89,7 @@ def run_collector():
     finally:
         if _collector:
             _collector.stop()
+        db.close_pool()
         logger.info("Collector stopped")
 
 
