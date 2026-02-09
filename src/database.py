@@ -37,9 +37,16 @@ class Database:
     def _get_pool(self) -> pool.ThreadedConnectionPool:
         """Get or create the connection pool (lazy init)"""
         if self._pool is None:
+            import os
+            maxconn = DEFAULT_POOL_MAX_CONN
+            if (env_max := os.getenv("POOL_MAX_CONN")) is not None:
+                try:
+                    maxconn = int(env_max)
+                except ValueError:
+                    pass
             self._pool = pool.ThreadedConnectionPool(
                 minconn=DEFAULT_POOL_MIN_CONN,
-                maxconn=DEFAULT_POOL_MAX_CONN,
+                maxconn=maxconn,
                 dsn=self.database_url,
             )
             logger.info("Database connection pool initialized")
