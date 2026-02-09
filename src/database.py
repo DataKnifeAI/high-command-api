@@ -7,9 +7,9 @@ from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# Connection pool defaults
+# Connection pool defaults (poller does 264+ planet saves + 44 campaign saves per cycle)
 DEFAULT_POOL_MIN_CONN = 2
-DEFAULT_POOL_MAX_CONN = 10
+DEFAULT_POOL_MAX_CONN = 50
 
 
 class Database:
@@ -50,6 +50,10 @@ class Database:
         conn = self._get_pool().getconn()
         # Wrap so conn.close() returns to pool instead of closing the underlying connection
         def _close():
+            try:
+                conn.rollback()  # Reset connection state for reuse
+            except Exception:
+                pass
             self._get_pool().putconn(conn)
 
         conn.close = _close
