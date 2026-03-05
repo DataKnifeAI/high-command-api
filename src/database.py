@@ -50,10 +50,11 @@ class Database:
 
         self.database_url = database_url
         self._initialized = False
+        self._schema_initialized = False
         self._pool: Optional[pool.ThreadedConnectionPool] = None
 
     def _get_pool(self) -> pool.ThreadedConnectionPool:
-        """Get or create the connection pool (lazy init)"""
+        """Get or create the connection pool (lazy init). Ensures schema exists on first use."""
         if self._pool is None:
             import os
             maxconn = DEFAULT_POOL_MAX_CONN
@@ -68,6 +69,8 @@ class Database:
                 dsn=self.database_url,
             )
             logger.info("Database connection pool initialized")
+        if not self._schema_initialized and self._init_db():
+            self._schema_initialized = True
         return self._pool
 
     def _get_connection(self):
@@ -102,8 +105,8 @@ class Database:
         except (ValueError, AttributeError):
             return None
 
-    def _init_db(self):
-        """Initialize database schema (lazy - called on first use)"""
+    def _init_db(self) -> bool:
+        """Initialize database schema (lazy - called on first use). Returns True on success."""
         conn = None
         try:
             conn = self._get_connection()
@@ -232,13 +235,19 @@ class Database:
 
             conn.commit()
             conn.close()
-        except psycopg2.OperationalError:
-            # Database connection failed - this is OK during tests/imports
-            # Schema will be created when first actual operation happens
-            pass
-        except Exception:
-            # Any other error during init is also OK - will be handled on first use
-            pass
+            return True
+        except psycopg2.OperationalError as e:
+            logger.debug("Schema init skipped (connection): %s", e)
+            return False
+        except Exception as e:
+            logger.warning("Schema init failed: %s", e)
+            return False
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def save_war_status(self, data: Dict) -> bool:
         """Save war status to database"""
