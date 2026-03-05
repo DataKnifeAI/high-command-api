@@ -1,21 +1,41 @@
+# Local development and run: use Postgres. Start with: docker compose up -d postgres && make run
+# Or run API in Docker too: docker compose up --build
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: high-command-postgres
+    environment:
+      POSTGRES_USER: helldivers
+      POSTGRES_PASSWORD: helldivers
+      POSTGRES_DB: helldivers2
+    ports:
+      - "5432:5432"
+    volumes:
+      - high-command-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helldivers -d helldivers2"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
     image: high-command-api:latest
-    # Alternative: Use Harbor image for production deployments
-    # image: harbor.dataknife.net/library/high-command-api:latest
     ports:
       - "5000:5000"
     environment:
+      - DATABASE_URL=postgresql://helldivers:helldivers@postgres:5432/helldivers2
       - FLASK_ENV=production
       - API_PORT=5000
       - SCRAPE_INTERVAL=300
-    volumes:
-      - ./helldivers2.db:/app/helldivers2.db
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
@@ -23,3 +43,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  high-command-pgdata:

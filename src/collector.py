@@ -1,4 +1,5 @@
 import logging
+import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 from src.scraper import HellDivers2Scraper
 from src.database import Database
@@ -17,7 +18,7 @@ class DataCollector:
         self.is_running = False
 
     def start(self):
-        """Start the data collection scheduler"""
+        """Start the data collection scheduler and run an initial pull so MCP/UI have data immediately."""
         if self.is_running:
             logger.warning("Data collector is already running")
             return
@@ -28,6 +29,11 @@ class DataCollector:
         self.scheduler.start()
         self.is_running = True
         logger.info(f"Data collector started with {self.interval}s interval")
+
+        # Initial pull so MCP and UI have data while the interval runs
+        thread = threading.Thread(target=self.collect_all_data, daemon=True)
+        thread.start()
+        logger.info("Initial data collection started in background")
 
     def stop(self):
         """Stop the data collection scheduler"""
