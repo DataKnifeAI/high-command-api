@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint format clean build docker-build docker-login docker-push docker-pull docker-run run check check-all commit-changes release venv
+.PHONY: help install dev test lint format clean build docker-build docker-login docker-push docker-pull docker-run run check check-all commit-changes release venv postgres-up postgres-down local-up local-down
 
 # Force use of bash shell (required for make to work properly with line continuations)
 SHELL := /bin/bash
@@ -22,7 +22,11 @@ help:
 	@echo "  venv           Create virtual environment"
 	@echo "  install        Install dependencies"
 	@echo "  dev            Install development dependencies and run with reload"
-	@echo "  run            Run the API server"
+	@echo "  run            Run the API server (requires DATABASE_URL; use postgres-up first for local)"
+	@echo "  postgres-up    Start local PostgreSQL in Docker (port 5432)"
+	@echo "  postgres-down  Stop local PostgreSQL"
+	@echo "  local-up       Start Postgres then run API (local development)"
+	@echo "  local-down    Stop Postgres"
 	@echo "  test           Run tests with coverage"
 	@echo "  test-fast      Run tests without coverage"
 	@echo "  lint           Run linters (ruff, mypy)"
@@ -52,6 +56,22 @@ dev: venv
 
 run: venv
 	$(PYTHON) -m uvicorn src.app:app --host 0.0.0.0 --port $(PORT)
+
+# Local PostgreSQL for development (docker compose)
+postgres-up:
+	docker compose up -d postgres
+	@echo "Waiting for Postgres to be ready..."
+	@until docker compose exec -T postgres pg_isready -U helldivers -d helldivers2 2>/dev/null; do sleep 1; done
+	@echo "Postgres is ready. Set DATABASE_URL=postgresql://helldivers:helldivers@localhost:5432/helldivers2 (see .env.example) and run: make run"
+
+postgres-down:
+	docker compose stop postgres
+
+local-up: postgres-up venv
+	@echo "Starting API with local Postgres..."
+	@DATABASE_URL=$${DATABASE_URL:-postgresql://helldivers:helldivers@localhost:5432/helldivers2} $(PYTHON) -m uvicorn src.app:app --host 0.0.0.0 --port $(PORT)
+
+local-down: postgres-down
 
 test:
 	$(PYTEST)
