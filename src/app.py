@@ -60,11 +60,16 @@ app.add_middleware(
 
 @app.get("/api/war/status", tags=["War"])
 async def get_war_status():
-    """Get current war status"""
+    """Get current war status. If DB is empty, fetches live and saves so Data Console/MCP get data on first request."""
     data = db.get_latest_war_status()
     if data:
         return data
-    raise HTTPException(status_code=404, detail="No war status data available")
+    # No data yet (e.g. before first collector run): try live fetch so UI/MCP get something
+    data = scraper.get_war_status()
+    if data:
+        db.save_war_status(data)
+        return data
+    raise HTTPException(status_code=404, detail="No war status data available (upstream API may be unreachable)")
 
 
 @app.post("/api/war/status/refresh", tags=["War"])
@@ -316,11 +321,15 @@ async def get_planet_history(planet_index: int, limit: int = Query(10, ge=1, le=
 
 @app.get("/api/statistics", tags=["Statistics"])
 async def get_statistics():
-    """Get latest global statistics"""
+    """Get latest global statistics. If DB is empty, fetches live and saves so Data Console/MCP get data."""
     data = db.get_latest_statistics()
     if data:
         return data
-    raise HTTPException(status_code=404, detail="No statistics available")
+    data = scraper.get_statistics()
+    if data:
+        db.save_statistics(data)
+        return data
+    raise HTTPException(status_code=404, detail="No statistics available (upstream API may be unreachable)")
 
 
 @app.get("/api/statistics/history", tags=["Statistics"])

@@ -50,13 +50,29 @@ class TestWarEndpoints:
         data = response.json()
         assert data["war_id"] == 1
 
+    @patch("src.app.scraper.get_war_status")
     @patch("src.app.db.get_latest_war_status")
-    def test_get_war_status_not_found(self, mock_get, client):
-        """Test getting war status when none exists"""
+    def test_get_war_status_not_found(self, mock_get, mock_scraper, client):
+        """Test getting war status when DB empty and live fetch fails"""
         mock_get.return_value = None
+        mock_scraper.return_value = None
 
         response = client.get("/api/war/status")
         assert response.status_code == 404
+
+    @patch("src.app.scraper.get_war_status")
+    @patch("src.app.db.save_war_status")
+    @patch("src.app.db.get_latest_war_status")
+    def test_get_war_status_live_when_db_empty(self, mock_get, mock_save, mock_scraper, client):
+        """When DB has no row yet, GET uses live fetch and persists"""
+        mock_get.return_value = None
+        mock_scraper.return_value = {"war_id": 42, "status": "active"}
+        mock_save.return_value = True
+
+        response = client.get("/api/war/status")
+        assert response.status_code == 200
+        assert response.json()["war_id"] == 42
+        mock_save.assert_called_once()
 
     @patch("src.app.scraper.get_war_status")
     @patch("src.app.db.save_war_status")
@@ -173,13 +189,29 @@ class TestStatisticsEndpoints:
         response = client.get("/api/statistics")
         assert response.status_code == 200
 
+    @patch("src.app.scraper.get_statistics")
     @patch("src.app.db.get_latest_statistics")
-    def test_get_statistics_not_found(self, mock_get, client):
-        """Test getting statistics when none exists"""
+    def test_get_statistics_not_found(self, mock_get, mock_scraper, client):
+        """Test getting statistics when DB empty and live fetch fails"""
         mock_get.return_value = None
+        mock_scraper.return_value = None
 
         response = client.get("/api/statistics")
         assert response.status_code == 404
+
+    @patch("src.app.scraper.get_statistics")
+    @patch("src.app.db.save_statistics")
+    @patch("src.app.db.get_latest_statistics")
+    def test_get_statistics_live_when_db_empty(self, mock_get, mock_save, mock_scraper, client):
+        """When DB has no row yet, GET uses live fetch and persists"""
+        mock_get.return_value = None
+        mock_scraper.return_value = {"total_players": 999}
+        mock_save.return_value = True
+
+        response = client.get("/api/statistics")
+        assert response.status_code == 200
+        assert response.json()["total_players"] == 999
+        mock_save.assert_called_once()
 
     @patch("src.app.db.get_latest_statistics")
     def test_get_statistics_history(self, mock_get, client):

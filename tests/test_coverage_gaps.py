@@ -187,10 +187,12 @@ class TestAppErrorPaths:
 class TestDatabaseCoveragePaths:
     """Test database error and edge case paths"""
 
+    @patch("src.app.scraper.get_statistics")
     @patch("src.app.db.get_latest_statistics")
-    def test_statistics_not_found(self, mock_get, client):
-        """Test getting statistics when not found"""
+    def test_statistics_not_found(self, mock_get, mock_scraper, client):
+        """Test getting statistics when DB empty and live fetch fails"""
         mock_get.return_value = None
+        mock_scraper.return_value = None
         response = client.get("/api/statistics")
         assert response.status_code == 404
 
