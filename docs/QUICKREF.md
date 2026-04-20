@@ -5,7 +5,7 @@
 ### Installation
 ```bash
 # Clone repository
-git clone https://github.com/surrealwolf/high-command-api.git
+git clone https://github.com/DataKnifeAI/high-command-api.git
 cd high-command-api
 
 # Create virtual environment
@@ -347,4 +347,4 @@ make status
 - Review API reference at `/docs/API.md`
 - View architecture at `/docs/ARCHITECTURE.md`
 - Run tests to verify setup: `make test`
-- Check GitHub issues: https://github.com/surrealwolf/high-command-api/issues
+- Check GitHub issues: https://github.com/DataKnifeAI/high-command-api/issues

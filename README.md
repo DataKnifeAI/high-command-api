@@ -250,7 +250,9 @@ curl -X POST http://localhost:5000/api/statistics/refresh
 
 ## License
 
-MIT
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full text.
+
+Copyright 2026 DataKnifeAI
 
 ## Contributing
 
