@@ -1,5 +1,8 @@
 # High Command API
 
+![High Command API](docs/assets/high-command-api-hero.jpg)
+
+
 A production-ready FastAPI application for real-time scraping and tracking of Hell Divers 2 game data.
 
 ## Overview
